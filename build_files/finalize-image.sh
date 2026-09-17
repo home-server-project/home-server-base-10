@@ -34,8 +34,8 @@ BASE_CPE_NAME="${CPE_NAME:-}"
     echo "ERROR: expected platform:el10, got '${BASE_PLATFORM_ID}'." >&2
     exit 1
 }
-[[ "${IMAGE_CHANNEL}" == "testing" ]] || {
-    echo "ERROR: testing branch must build IMAGE_CHANNEL=testing, got '${IMAGE_CHANNEL}'." >&2
+[[ "${IMAGE_CHANNEL}" == "stable" ]] || {
+    echo "ERROR: main branch must build IMAGE_CHANNEL=stable, got '${IMAGE_CHANNEL}'." >&2
     exit 1
 }
 
@@ -60,12 +60,12 @@ osr_unset() {
 }
 
 osr_set NAME "Home Server Base"
-osr_set PRETTY_NAME "Home Server Base 10 Testing"
+osr_set PRETTY_NAME "Home Server Base 10"
 osr_set ID "home-server-base"
 osr_set ID_LIKE "almalinux rhel centos fedora"
 osr_set VERSION "${BASE_VERSION_ID}"
-osr_set VARIANT "Testing"
-osr_set VARIANT_ID "testing"
+osr_set VARIANT "Stable"
+osr_set VARIANT_ID "stable"
 osr_set IMAGE_ID "home-server-base"
 osr_set IMAGE_VERSION "10"
 osr_set HOME_URL "https://github.com/home-server-project/home-server-base-10"
