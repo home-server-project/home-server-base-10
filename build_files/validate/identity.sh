@@ -13,7 +13,7 @@ source "${OS_RELEASE_USR}"
 
 [[ "${ID:-}" == "home-server-base" ]] || fail "ID=${ID:-unset}; expected home-server-base"
 [[ "${NAME:-}" == "Home Server Base" ]] || fail "NAME=${NAME:-unset}; expected Home Server Base"
-[[ "${PRETTY_NAME:-}" == "Home Server Base 10 Testing" ]] || fail "PRETTY_NAME=${PRETTY_NAME:-unset}; expected Home Server Base 10 Testing"
+[[ "${PRETTY_NAME:-}" == "Home Server Base 10" ]] || fail "PRETTY_NAME=${PRETTY_NAME:-unset}; expected Home Server Base 10"
 [[ "${VERSION_ID%%.*}" == "10" ]] || fail "VERSION_ID=${VERSION_ID:-unset}; expected EL10 major version"
 [[ "${PLATFORM_ID:-}" == "platform:el10" ]] || fail "PLATFORM_ID=${PLATFORM_ID:-unset}; expected platform:el10"
 
@@ -21,8 +21,8 @@ for family in almalinux rhel centos fedora; do
     [[ " ${ID_LIKE:-} " == *" ${family} "* ]] || fail "ID_LIKE=${ID_LIKE:-unset}; missing ${family}"
 done
 
-[[ "${VARIANT:-}" == "Testing" ]] || fail "VARIANT=${VARIANT:-unset}; expected Testing"
-[[ "${VARIANT_ID:-}" == "testing" ]] || fail "VARIANT_ID=${VARIANT_ID:-unset}; expected testing"
+[[ "${VARIANT:-}" == "Stable" ]] || fail "VARIANT=${VARIANT:-unset}; expected Stable"
+[[ "${VARIANT_ID:-}" == "stable" ]] || fail "VARIANT_ID=${VARIANT_ID:-unset}; expected stable"
 [[ "${IMAGE_ID:-}" == "home-server-base" ]] || fail "IMAGE_ID=${IMAGE_ID:-unset}; expected home-server-base"
 [[ "${IMAGE_VERSION:-}" == "10" ]] || fail "IMAGE_VERSION=${IMAGE_VERSION:-unset}; expected 10"
 [[ "${VENDOR_NAME:-}" == "Home Server Project" ]] || fail "VENDOR_NAME=${VENDOR_NAME:-unset}; expected Home Server Project"
@@ -37,7 +37,7 @@ done
 [[ "${HOME_SERVER_BASE_UPSTREAM_PLATFORM_ID:-}" == "platform:el10" ]] || fail "upstream PLATFORM_ID metadata is not platform:el10"
 [[ "${HOME_SERVER_BASE_UPSTREAM_CPE_NAME:-}" == cpe:/o:almalinux:* ]] || fail "upstream CPE metadata does not identify AlmaLinux"
 [[ "${HOME_SERVER_BASE_PROFILE:-}" == "almalinux-10-minimal-plus" ]] || fail "base profile metadata is incorrect"
-[[ "${HOME_SERVER_BASE_CHANNEL:-}" == "testing" ]] || fail "base channel metadata is not testing"
+[[ "${HOME_SERVER_BASE_CHANNEL:-}" == "stable" ]] || fail "base channel metadata is not stable"
 
 for key in ALMALINUX_MANTISBT_PROJECT ALMALINUX_MANTISBT_PROJECT_VERSION REDHAT_SUPPORT_PRODUCT REDHAT_SUPPORT_PRODUCT_VERSION SUPPORT_END LOGO; do
     if grep -q "^${key}=" "${OS_RELEASE_USR}"; then
@@ -53,5 +53,5 @@ if [[ -e "${OS_RELEASE_ETC}" ]] && ! [[ "${OS_RELEASE_ETC}" -ef "${OS_RELEASE_US
     done
 fi
 
-pass "Home Server Base 10 Testing identity and AlmaLinux 10 upstream metadata"
+pass "Home Server Base 10 stable identity and AlmaLinux 10 upstream metadata"
 printf 'HOME SERVER BASE IDENTITY: PASS\n'
