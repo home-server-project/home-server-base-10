@@ -1,7 +1,7 @@
 ARG ALMA_REPOS_IMAGE=quay.io/almalinuxorg/10-base:10
 ARG BOOTC_IMAGECTL_IMAGE=quay.io/centos-bootc/centos-bootc:stream10
 ARG ALMA_BUILDER_IMAGE=quay.io/almalinuxorg/10-kitten-base:10-kitten
-ARG IMAGE_CHANNEL=testing
+ARG IMAGE_CHANNEL=stable
 
 FROM ${ALMA_REPOS_IMAGE} AS repos
 FROM ${BOOTC_IMAGECTL_IMAGE} AS imagectl
@@ -35,13 +35,13 @@ COPY --from=rootfs-builder /target-rootfs/ /
 
 LABEL containers.bootc=1 \
       ostree.bootable=1 \
-      org.opencontainers.image.title="Home Server Base 10 Testing" \
+      org.opencontainers.image.title="Home Server Base 10" \
       org.opencontainers.image.description="Generic AlmaLinux 10 minimal-plus-derived bootc base for Home Server Project systems" \
       org.opencontainers.image.source="https://github.com/home-server-project/home-server-base-10" \
       org.opencontainers.image.vendor="Home Server Project" \
       io.home-server-project.base.generation="10" \
       io.home-server-project.base.profile="almalinux-10-minimal-plus" \
-      io.home-server-project.base.channel="testing"
+      io.home-server-project.base.channel="stable"
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
