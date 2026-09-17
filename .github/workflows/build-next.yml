@@ -1,5 +1,5 @@
 ---
-name: Build Home Server Base 10 next image
+name: next
 
 on:
   push:
@@ -268,3 +268,23 @@ jobs:
               echo '- Published: no image published'
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
+
+  cleanup:
+    name: cleanup
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+
+    steps:
+      - name: Remove expired next images
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          packages: home-server-base-10
+          delete-tags: 'next-*'
+          exclude-tags: 'next,stable,stable-*,testing,testing-*'
+          older-than: 45 days
+          keep-n-tagged: 7
+          validate: true
+
