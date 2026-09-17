@@ -46,7 +46,7 @@ LABEL containers.bootc=1 \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     IMAGE_CHANNEL="${IMAGE_CHANNEL}" \
-    /ctx/build_files/finalize-image.sh
+    bash /ctx/build_files/finalize-image.sh
 
 RUN /usr/libexec/home-server-base/health/identity \
     && bootc container lint --fatal-warnings
