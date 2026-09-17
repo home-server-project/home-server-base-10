@@ -8,6 +8,8 @@ on:
       - '**/README.md'
       - 'docs/**'
   workflow_dispatch:
+  schedule:
+    - cron: '00 13 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-next
