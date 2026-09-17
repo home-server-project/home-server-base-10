@@ -17,6 +17,9 @@ include:
 
 packages:
   - almalinux-kitten-repos
+  # Current Kitten bootc lint requires the zstd runtime dependency in the
+  # completed image. Keep this next-only unless stable later needs the same fix.
+  - zstd
 
 postprocess:
   - |
