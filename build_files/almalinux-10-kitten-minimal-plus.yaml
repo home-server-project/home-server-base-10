@@ -1,0 +1,35 @@
+releasever: 10
+
+repos:
+  - baseos
+  - appstream
+
+variables:
+  distro: "almalinux10"
+
+# Compose the same Home Server Base Minimal Plus content tier against AlmaLinux
+# Kitten repositories. Keep appliance features in downstream images.
+include:
+  - minimal-plus/manifest.yaml
+  - standard/system-configuration.yaml
+  - standard/persistent-journal.yaml
+  - standard/generic-growfs.yaml
+
+packages:
+  - almalinux-kitten-repos
+
+postprocess:
+  - |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p /usr/lib/bootc/install/
+    cat > /usr/lib/bootc/install/20-rhel.toml << EOF_INSTALL
+    [install]
+    root-fs-type = "xfs"
+    EOF_INSTALL
+  - |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dnf clean all
+    rm /var/{log,cache,lib}/* -rf
+    systemctl preset-all
