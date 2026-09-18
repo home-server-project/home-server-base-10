@@ -2,6 +2,7 @@
 set -ouex pipefail
 
 : "${IMAGE_CHANNEL:?IMAGE_CHANNEL must be set}"
+: "${BASE_PROFILE:?BASE_PROFILE must be set}"
 
 OS_RELEASE_USR=/usr/lib/os-release
 OS_RELEASE_ETC=/etc/os-release
@@ -12,8 +13,7 @@ OS_RELEASE_ETC=/etc/os-release
 }
 
 # Capture the true upstream foundation before replacing the visible product
-# identity. AlmaLinux remains package/platform provenance, not the resulting OS
-# product identity.
+# identity. AlmaLinux remains package/platform provenance, not the resulting OS.
 # shellcheck disable=SC1090
 source "${OS_RELEASE_USR}"
 BASE_ID="${ID:-}"
@@ -34,10 +34,56 @@ BASE_CPE_NAME="${CPE_NAME:-}"
     echo "ERROR: expected platform:el10, got '${BASE_PLATFORM_ID}'." >&2
     exit 1
 }
-[[ "${IMAGE_CHANNEL}" == "stable" ]] || {
-    echo "ERROR: main branch must build IMAGE_CHANNEL=stable, got '${IMAGE_CHANNEL}'." >&2
-    exit 1
-}
+
+case "${BASE_PROFILE}" in
+    almalinux-10-minimal-plus)
+        [[ "${BASE_PRETTY_NAME}" != *"AlmaLinux Kitten"* ]] || {
+            echo "ERROR: normal AlmaLinux profile resolved Kitten upstream '${BASE_PRETTY_NAME}'." >&2
+            exit 1
+        }
+        ;;
+    almalinux-kitten-10-minimal-plus)
+        [[ "${BASE_PRETTY_NAME}" == *"AlmaLinux Kitten"* ]] || {
+            echo "ERROR: Kitten profile expected AlmaLinux Kitten upstream, got '${BASE_PRETTY_NAME}'." >&2
+            exit 1
+        }
+        ;;
+    *)
+        echo "ERROR: unsupported BASE_PROFILE='${BASE_PROFILE}'." >&2
+        exit 1
+        ;;
+esac
+
+case "${IMAGE_CHANNEL}" in
+    stable)
+        [[ "${BASE_PROFILE}" == "almalinux-10-minimal-plus" ]] || {
+            echo "ERROR: stable channel requires almalinux-10-minimal-plus." >&2
+            exit 1
+        }
+        PRODUCT_PRETTY_NAME="Home Server Base 10"
+        PRODUCT_VARIANT="Stable"
+        ;;
+    testing)
+        [[ "${BASE_PROFILE}" == "almalinux-10-minimal-plus" ]] || {
+            echo "ERROR: testing channel requires almalinux-10-minimal-plus." >&2
+            exit 1
+        }
+        PRODUCT_PRETTY_NAME="Home Server Base 10 Testing"
+        PRODUCT_VARIANT="Testing"
+        ;;
+    next)
+        [[ "${BASE_PROFILE}" == "almalinux-kitten-10-minimal-plus" ]] || {
+            echo "ERROR: next channel requires almalinux-kitten-10-minimal-plus." >&2
+            exit 1
+        }
+        PRODUCT_PRETTY_NAME="Home Server Base 10 Next"
+        PRODUCT_VARIANT="Next"
+        ;;
+    *)
+        echo "ERROR: unsupported IMAGE_CHANNEL='${IMAGE_CHANNEL}'." >&2
+        exit 1
+        ;;
+esac
 
 OS_RELEASE_FILES=("${OS_RELEASE_USR}")
 if [[ -e "${OS_RELEASE_ETC}" ]] && ! [[ "${OS_RELEASE_ETC}" -ef "${OS_RELEASE_USR}" ]]; then
@@ -60,12 +106,12 @@ osr_unset() {
 }
 
 osr_set NAME "Home Server Base"
-osr_set PRETTY_NAME "Home Server Base 10"
+osr_set PRETTY_NAME "${PRODUCT_PRETTY_NAME}"
 osr_set ID "home-server-base"
 osr_set ID_LIKE "almalinux rhel centos fedora"
 osr_set VERSION "${BASE_VERSION_ID}"
-osr_set VARIANT "Stable"
-osr_set VARIANT_ID "stable"
+osr_set VARIANT "${PRODUCT_VARIANT}"
+osr_set VARIANT_ID "${IMAGE_CHANNEL}"
 osr_set IMAGE_ID "home-server-base"
 osr_set IMAGE_VERSION "10"
 osr_set HOME_URL "https://github.com/home-server-project/home-server-base-10"
@@ -82,7 +128,7 @@ osr_set HOME_SERVER_BASE_UPSTREAM_PRETTY_NAME "${BASE_PRETTY_NAME}"
 osr_set HOME_SERVER_BASE_UPSTREAM_VERSION_ID "${BASE_VERSION_ID}"
 osr_set HOME_SERVER_BASE_UPSTREAM_PLATFORM_ID "${BASE_PLATFORM_ID}"
 osr_set HOME_SERVER_BASE_UPSTREAM_CPE_NAME "${BASE_CPE_NAME}"
-osr_set HOME_SERVER_BASE_PROFILE "almalinux-10-minimal-plus"
+osr_set HOME_SERVER_BASE_PROFILE "${BASE_PROFILE}"
 osr_set HOME_SERVER_BASE_CHANNEL "${IMAGE_CHANNEL}"
 
 # These fields identify/support the upstream AlmaLinux product itself and must
