@@ -195,9 +195,9 @@ jobs:
         run: |
           set -euo pipefail
           sudo podman run --rm \
-            -e EXPECTED_RPM_ARCH \
-            -e EXPECTED_IMAGE_ARCH \
-            -e EXPECTED_MICROARCH \
+            -e "EXPECTED_RPM_ARCH=${EXPECTED_RPM_ARCH}" \
+            -e "EXPECTED_IMAGE_ARCH=${EXPECTED_IMAGE_ARCH}" \
+            -e "EXPECTED_MICROARCH=${EXPECTED_MICROARCH}" \
             --entrypoint /bin/bash \
             home-server-base-10:test \
             -c '
