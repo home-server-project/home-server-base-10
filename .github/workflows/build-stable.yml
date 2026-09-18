@@ -1,28 +1,28 @@
 ---
-name: next
+name: stable
 
 on:
   push:
-    branches: [next]
+    branches: [main]
     paths-ignore:
       - '**/README.md'
       - 'docs/**'
   workflow_dispatch:
   schedule:
-    - cron: '00 13 * * *'
+    - cron: '30 13 * * *'
 
 concurrency:
-  group: ${{ github.workflow }}-next
+  group: ${{ github.workflow }}-stable
   cancel-in-progress: true
 
 env:
   IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/home-server-base-10
-  IMAGE_CHANNEL: 'next'
-  BASE_MANIFEST: 'almalinux-10-kitten-minimal-plus'
-  BASE_PROFILE: 'almalinux-kitten-10-minimal-plus'
+  IMAGE_CHANNEL: 'stable'
+  BASE_MANIFEST: 'almalinux-10-minimal-plus'
+  BASE_PROFILE: 'almalinux-10-minimal-plus'
   RECHUNK_MAX_LAYERS: '127'
   OCI_LAYER_LIMIT: '128'
-  ALMA_REPOS_IMAGE: quay.io/almalinuxorg/10-kitten-base:10-kitten
+  ALMA_REPOS_IMAGE: quay.io/almalinuxorg/10-base:10
   BOOTC_IMAGECTL_IMAGE: quay.io/centos-bootc/centos-bootc:stream10
   ALMA_BUILDER_IMAGE: quay.io/almalinuxorg/10-kitten-base:10-kitten
 
@@ -44,31 +44,31 @@ jobs:
             upstream_variant: ''
             rpm_arch: x86_64
             microarch: v3
-            current_tag: next
-            immutable_prefix: next
+            current_tag: stable
+            immutable_prefix: stable
           - name: x86_64_v2
             platform: linux/amd64/v2
             upstream_arch: amd64
             upstream_variant: v2
             rpm_arch: x86_64_v2
             microarch: v2
-            current_tag: next-v2
-            immutable_prefix: next-v2
+            current_tag: stable-v2
+            immutable_prefix: stable-v2
 
     steps:
-      - name: Checkout next branch
+      - name: Checkout main branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: next
+          ref: main
 
-      - name: Resolve next source revision
+      - name: Resolve stable source revision
         shell: bash
         run: |
           set -euo pipefail
-          next_sha="$(git rev-parse HEAD)"
-          [[ "${next_sha}" =~ ^[0-9a-f]{40}$ ]]
-          echo "NEXT_SHA=${next_sha}" >> "${GITHUB_ENV}"
-          echo "Next source revision: ${next_sha}"
+          stable_sha="$(git rev-parse HEAD)"
+          [[ "${stable_sha}" =~ ^[0-9a-f]{40}$ ]]
+          echo "STABLE_SHA=${stable_sha}" >> "${GITHUB_ENV}"
+          echo "Stable source revision: ${stable_sha}"
 
       - name: Install build dependencies
         shell: bash
@@ -110,18 +110,18 @@ jobs:
             printf '%s@%s' "${image%:*}" "${digest}"
           }
 
-          # Kitten repository metadata and the builder are platform-sensitive so
+          # Alma repository metadata and the builder are platform-sensitive so
           # x86_64_v2 resolves the v2 manifests. bootc imagectl is a build tool,
-          # not the source of the composed Kitten rootfs, so keep its proven amd64
+          # not the source of the composed Alma rootfs, so keep its proven amd64
           # input identical for both matrix entries.
           repos_ref="$(resolve_ref "${ALMA_REPOS_IMAGE}" "${UPSTREAM_ARCH}" "${UPSTREAM_VARIANT}")"
           imagectl_ref="$(resolve_ref "${BOOTC_IMAGECTL_IMAGE}" amd64)"
           builder_ref="$(resolve_ref "${ALMA_BUILDER_IMAGE}" "${UPSTREAM_ARCH}" "${UPSTREAM_VARIANT}")"
 
           echo "Build platform: ${{ matrix.platform }}"
-          echo "Kitten repository image: ${repos_ref}"
+          echo "Alma repository image: ${repos_ref}"
           echo "bootc imagectl image: ${imagectl_ref}"
-          echo "Kitten builder image: ${builder_ref}"
+          echo "Alma builder image: ${builder_ref}"
 
           echo "repos_ref=${repos_ref}" >> "${GITHUB_OUTPUT}"
           echo "imagectl_ref=${imagectl_ref}" >> "${GITHUB_OUTPUT}"
@@ -147,7 +147,7 @@ jobs:
             --build-arg "IMAGE_CHANNEL=${IMAGE_CHANNEL}" \
             --build-arg "BASE_MANIFEST=${BASE_MANIFEST}" \
             --build-arg "BASE_PROFILE=${BASE_PROFILE}" \
-            --label "org.opencontainers.image.revision=${NEXT_SHA}" \
+            --label "org.opencontainers.image.revision=${STABLE_SHA}" \
             --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --label "io.home-server-project.base.arch=${{ matrix.name }}" \
             --label "io.home-server-project.base.microarch=${{ matrix.microarch }}" \
@@ -210,7 +210,7 @@ jobs:
               set -euo pipefail
               bootc container lint --fatal-warnings
               /usr/libexec/home-server-base/health/identity
-              rpm -q almalinux-kitten-repos
+              rpm -q almalinux-repos
               command -v bootc
               command -v dnf
               test -f /usr/lib/bootc/install/20-rhel.toml
@@ -237,11 +237,11 @@ jobs:
           [[ "${microarch_label}" == "${EXPECTED_MICROARCH}" ]]
           echo "Validated image labels: arch=${arch_label}, microarch=${microarch_label}"
 
-      - name: Prepare next tags
+      - name: Prepare stable tags
         shell: bash
         run: |
           set -euo pipefail
-          short_sha="${NEXT_SHA:0:7}"
+          short_sha="${STABLE_SHA:0:7}"
           build_tag="${{ matrix.immutable_prefix }}-$(date -u +%Y%m%d)-${short_sha}"
           echo "BUILD_TAG=${build_tag}" >> "${GITHUB_ENV}"
           echo "CURRENT_TAG=${{ matrix.current_tag }}" >> "${GITHUB_ENV}"
@@ -261,7 +261,7 @@ jobs:
             --password-stdin
           chmod 600 "${HOME}/.docker/config.json"
 
-      - name: Push next image
+      - name: Push stable image
         id: push
         shell: bash
         run: |
@@ -319,18 +319,18 @@ jobs:
           PUBLISHED_DIGEST: ${{ steps.push.outputs.digest }}
         run: |
           {
-            echo '## Home Server Base 10 next'
+            echo '## Home Server Base 10 stable'
             echo
-            echo "- Source branch: next"
-            echo "- Source revision: ${NEXT_SHA:-unknown}"
-            echo "- Product identity: Home Server Base 10 Next"
-            echo "- Base profile: AlmaLinux Kitten 10 minimal-plus"
+            echo "- Source branch: main"
+            echo "- Source revision: ${STABLE_SHA:-unknown}"
+            echo "- Product identity: Home Server Base 10"
+            echo "- Base profile: AlmaLinux 10 minimal-plus"
             echo "- Build platform: ${{ matrix.platform }}"
             echo "- RPM architecture: ${{ matrix.rpm_arch }}"
             echo "- CPU microarchitecture baseline: ${{ matrix.microarch }}"
-            echo "- Kitten repository source: ${REPOS_REF:-unknown}"
+            echo "- Alma repository source: ${REPOS_REF:-unknown}"
             echo "- bootc imagectl source: ${IMAGECTL_REF:-unknown}"
-            echo "- Kitten builder source: ${BUILDER_REF:-unknown}"
+            echo "- Alma builder source: ${BUILDER_REF:-unknown}"
             echo "- Rechunked layers: ${RECHUNK_LAYERS:-unknown} / OCI max ${OCI_LAYER_LIMIT}"
             if [[ -n "${PUBLISHED_DIGEST:-}" ]]; then
               echo "- Published tag: ${IMAGE_REPOSITORY}:${CURRENT_TAG:-unknown}"
@@ -349,14 +349,13 @@ jobs:
       packages: write
 
     steps:
-      - name: Remove expired next images
+      - name: Remove expired stable images
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           packages: home-server-base-10
-          delete-tags: 'next-*'
-          exclude-tags: 'next,next-v2,stable,stable-*,testing,testing-*'
+          delete-tags: 'stable-*'
+          exclude-tags: 'stable,stable-v2,testing,testing-*,next,next-*'
           older-than: 45 days
           keep-n-tagged: 7
           validate: true
-
