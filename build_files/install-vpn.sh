@@ -4,14 +4,14 @@ set -ouex pipefail
 # Home Server Base 10 owns the shared EL10 VPN client layer. Downstream EL10
 # appliances inherit these clients instead of reinstalling or overriding them.
 
-command -v curl >/dev/null 2>&1 || dnf install -y curl
-
 # ---------------------------------------------------------------------------
 # Tailscale
 # ---------------------------------------------------------------------------
 # Use Tailscale's official EL10 repository. Keep the repo disabled in deployed
 # images so VPN client updates arrive through normal image rebuilds.
-curl -fsSL     https://pkgs.tailscale.com/stable/rhel/10/tailscale.repo     -o /etc/yum.repos.d/tailscale.repo
+curl -fsSL \
+    https://pkgs.tailscale.com/stable/rhel/10/tailscale.repo \
+    -o /etc/yum.repos.d/tailscale.repo
 sed -ri 's/^enabled=1/enabled=0/' /etc/yum.repos.d/tailscale.repo || true
 
 dnf --enablerepo=tailscale-stable install -y tailscale
@@ -41,20 +41,5 @@ REPO
 dnf --setopt=tsflags=noscripts --enablerepo=netbird install -y netbird
 SYSTEMD_OFFLINE=1 netbird service install
 
-# ---------------------------------------------------------------------------
-# Build-time validation
-# ---------------------------------------------------------------------------
-command -v tailscale
-command -v netbird
-rpm -q tailscale netbird
-
-test -f /usr/lib/systemd/system/tailscaled.service
-test -f /etc/systemd/system/netbird.service
-
-test "$(systemctl is-enabled tailscaled.service)" = "enabled"
-test "$(systemctl is-enabled netbird.service)" = "enabled"
-
-# Images ship clients and enabled daemons only. Identity/enrollment remains
-# deployment-specific and must not be baked into the image.
-test ! -e /var/lib/tailscale/tailscaled.state
-test ! -e /var/lib/netbird/config.json
+# Package, command, service, enablement, and no-enrollment-state validation is
+# intentionally centralized in the final Base contract test.
