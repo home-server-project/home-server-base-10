@@ -1,6 +1,7 @@
 ARG ALMA_REPOS_IMAGE=quay.io/almalinuxorg/10-base:10
 ARG BOOTC_IMAGECTL_IMAGE=quay.io/centos-bootc/centos-bootc:stream10
 ARG ALMA_BUILDER_IMAGE=quay.io/almalinuxorg/10-kitten-base:10-kitten
+ARG NM_HSP_IMAGE=ghcr.io/home-server-project/nm-hsp:stable
 ARG BASE_MANIFEST=almalinux-10-minimal-plus
 ARG BASE_PROFILE=almalinux-10-minimal-plus
 ARG IMAGE_CHANNEL=stable
@@ -29,8 +30,16 @@ RUN /usr/libexec/bootc-base-imagectl build-rootfs \
     --manifest="${BASE_MANIFEST}" \
     /target-rootfs
 
+# Home Server Packages publishes nm-hsp as a verified OCI package artifact.
+# Use the same ordinary amd64/x86_64 artifact for both Base CPU baselines.
+FROM --platform=linux/amd64 ${NM_HSP_IMAGE} AS nm-hsp-package
+
+# Match the proven Home Server Project / uBlue artifact handoff pattern:
+# package payloads are copied into the scratch build context and exposed to
+# the final image only through the existing /ctx bind mount.
 FROM scratch AS ctx
 COPY build_files /build_files
+COPY --from=nm-hsp-package /rpms /nm-hsp-rpms
 
 FROM scratch
 ARG IMAGE_CHANNEL
@@ -49,6 +58,10 @@ LABEL containers.bootc=1 \
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
+    bash /ctx/build_files/install-packages.sh
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/tmp \
     bash /ctx/build_files/install-vpn.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
@@ -57,7 +70,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     BASE_PROFILE="${BASE_PROFILE}" \
     bash /ctx/build_files/finalize-image.sh
 
-RUN /usr/libexec/home-server-base/health/identity \
+RUN /usr/libexec/home-server-base/health/packages \
+    && /usr/libexec/home-server-base/health/identity \
     && bootc container lint --fatal-warnings
 
 STOPSIGNAL SIGRTMIN+3

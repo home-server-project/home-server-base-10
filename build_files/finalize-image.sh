@@ -148,6 +148,8 @@ chmod 0644 "${OS_RELEASE_FILES[@]}"
 install -d -m0755 /usr/libexec/home-server-base/health
 install -m0755 /ctx/build_files/validate/identity.sh \
     /usr/libexec/home-server-base/health/identity
+install -m0755 /ctx/build_files/validate/packages.sh \
+    /usr/libexec/home-server-base/health/packages
 
 # Keep only the minimal bootc /var skeleton. Runtime state belongs to deployed
 # machines, not this immutable base image.
