@@ -49,6 +49,10 @@ LABEL containers.bootc=1 \
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
+    bash /ctx/build_files/install-vpn.sh
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/tmp \
     IMAGE_CHANNEL="${IMAGE_CHANNEL}" \
     BASE_PROFILE="${BASE_PROFILE}" \
     bash /ctx/build_files/finalize-image.sh
