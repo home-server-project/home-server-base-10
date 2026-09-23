@@ -46,9 +46,9 @@ dnf install -y epel-release
 echo "Installing Home Server Base package set..."
 dnf install -y "${BASE_PACKAGES[@]}"
 
-# nm-hsp is produced and validated by home-server-packages. The workflow
-# resolves the stable OCI artifact to an immutable digest before this build.
-# The same ordinary x86_64 RPM is intentionally consumed by both Base variants.
+# nm-hsp is produced and validated by home-server-packages and consumed through
+# its stable package channel. The same ordinary x86_64 RPM is intentionally
+# consumed by both Base variants.
 mapfile -t NM_HSP_RPMS < <(
     find /ctx/nm-hsp-rpms -maxdepth 1 -type f \
         -name 'nm-hsp-*.x86_64.rpm' -print | sort
