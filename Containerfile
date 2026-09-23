@@ -9,7 +9,6 @@ ARG IMAGE_CHANNEL=stable
 FROM ${ALMA_REPOS_IMAGE} AS repos
 FROM ${BOOTC_IMAGECTL_IMAGE} AS imagectl
 FROM ${ALMA_BUILDER_IMAGE} AS rootfs-builder
-FROM --platform=linux/amd64 ${NM_HSP_IMAGE} AS nm-hsp
 
 ARG BASE_MANIFEST
 
@@ -30,6 +29,8 @@ RUN /usr/libexec/bootc-base-imagectl build-rootfs \
     --reinject \
     --manifest="${BASE_MANIFEST}" \
     /target-rootfs
+
+FROM --platform=linux/amd64 ${NM_HSP_IMAGE} AS nm-hsp
 
 FROM scratch AS ctx
 COPY build_files /build_files
