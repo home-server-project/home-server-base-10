@@ -39,6 +39,7 @@ FROM scratch
 ARG IMAGE_CHANNEL
 ARG BASE_PROFILE
 COPY --from=rootfs-builder /target-rootfs/ /
+RUN install -d -m0755 /mnt
 
 LABEL containers.bootc=1 \
       ostree.bootable=1 \
