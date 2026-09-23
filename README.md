@@ -54,6 +54,14 @@ Each workflow also publishes immutable dated/SHA tags.
 
 Published images are signed with Cosign and the workflow verifies the published digest after signing.
 
+## Shared VPN foundation
+
+Home Server Base 10 provides the common EL10 Tailscale and NetBird clients for downstream Home Server Project appliances.
+
+Both system services are installed and enabled for normal boot-time availability, but the base image contains no VPN account enrollment, authentication keys, or connection state. Deployment-specific identity is configured after installation.
+
+Tailscale uses the official Tailscale EL10 package repository. NetBird uses the official NetBird package repository and its own supported service installer; the daemon is not started during OCI/bootc image composition.
+
 ## Downstream projects
 
 - [Home Server Rose](https://github.com/home-server-project/home-server-rose)
