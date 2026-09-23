@@ -30,16 +30,21 @@ RUN /usr/libexec/bootc-base-imagectl build-rootfs \
     --manifest="${BASE_MANIFEST}" \
     /target-rootfs
 
-FROM --platform=linux/amd64 ${NM_HSP_IMAGE} AS nm-hsp
+# Home Server Packages publishes nm-hsp as a verified OCI package artifact.
+# Use the same ordinary amd64/x86_64 artifact for both Base CPU baselines.
+FROM --platform=linux/amd64 ${NM_HSP_IMAGE} AS nm-hsp-package
 
+# Match the proven Home Server Project / uBlue artifact handoff pattern:
+# package payloads are copied into the scratch build context and exposed to
+# the final image only through the existing /ctx bind mount.
 FROM scratch AS ctx
 COPY build_files /build_files
+COPY --from=nm-hsp-package /rpms /nm-hsp-rpms
 
 FROM scratch
 ARG IMAGE_CHANNEL
 ARG BASE_PROFILE
 COPY --from=rootfs-builder /target-rootfs/ /
-RUN install -d -m0755 /mnt
 
 LABEL containers.bootc=1 \
       ostree.bootable=1 \
@@ -52,7 +57,6 @@ LABEL containers.bootc=1 \
       io.home-server-project.base.channel="${IMAGE_CHANNEL}"
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=bind,from=nm-hsp,source=/,target=/mnt/nm-hsp \
     --mount=type=tmpfs,dst=/tmp \
     bash /ctx/build_files/install-packages.sh
 
