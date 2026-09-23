@@ -101,7 +101,7 @@ jobs:
               inspect_args+=(--override-variant "${variant}")
             fi
 
-            if ! digest="$(skopeo inspect \
+            if ! digest="$(skopeo inspect --retry-times 3 \
               "${inspect_args[@]}" \
               --format '{{.Digest}}' \
               "docker://${image}")"; then
