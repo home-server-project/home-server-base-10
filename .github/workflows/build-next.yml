@@ -103,11 +103,19 @@ jobs:
               inspect_args+=(--override-variant "${variant}")
             fi
 
-            digest="$(skopeo inspect \
+            if ! digest="$(skopeo inspect \
               "${inspect_args[@]}" \
               --format '{{.Digest}}' \
-              "docker://${image}")"
-            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+              "docker://${image}")"; then
+              echo "ERROR: failed to resolve upstream image digest: ${image}" >&2
+              return 1
+            fi
+
+            if ! [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "ERROR: invalid digest returned for ${image}: '${digest}'" >&2
+              return 1
+            fi
+
             printf '%s@%s' "${image%:*}" "${digest}"
           }
 
