@@ -3,17 +3,19 @@ set -eoux pipefail
 
 # Home Server Base 10 common package foundation.
 #
-# Follow the uBlue image-build pattern:
-# - distribution packages are installed in bulk from their normal repositories;
-# - packages that require a different source are handled in isolated sections;
-# - the finished image is validated once after all image changes are complete.
+# Follow the proven uBlue/Home Server Project image-build pattern:
+# - bootstrap repository inputs first;
+# - install the Base-owned package set in one transaction;
+# - consume Home Server Packages RPM artifacts through /ctx;
+# - validate the finished contract once at the end of the image build.
 
-ALMA_PACKAGES=(
+BASE_PACKAGES=(
     bind-utils
     firewalld
     hyperv-daemons
     iperf3
     lsof
+    micro
     nano
     NetworkManager-tui
     nmap-ncat
@@ -28,48 +30,32 @@ ALMA_PACKAGES=(
     traceroute
 )
 
-echo "Installing Home Server Base AlmaLinux packages..."
-dnf install -y "${ALMA_PACKAGES[@]}"
+# AlmaLinux 10 enables CRB in the repository set used by our proven Rose,
+# Pasiv Black Box, and JustVoxel builds. EPEL depends on the CRB SELinux split.
+if ! dnf repolist --enabled | grep -Eiq '(^|[[:space:]])crb([[:space:]]|$)'; then
+    echo "ERROR: AlmaLinux CRB repository is not enabled." >&2
+    exit 1
+fi
 
-# selinux-policy-extra is shipped by AlmaLinux CRB. Keep CRB disabled in the
-# resulting image and enable it only for this transaction.
-dnf --enablerepo=crb install -y selinux-policy-extra
-
-# EPEL is part of the Base contract. On AlmaLinux x86_64_v2, DNF resolves the
-# epel-release capability to AlmaLinux's supported altarch provider.
+# On normal x86_64 this installs epel-release. On AlmaLinux x86_64_v2 the same
+# request resolves to AlmaLinux's supported epel-release-almalinux-altarch
+# provider. In both cases it also supplies selinux-policy-extra as a dependency,
+# so Base does not redundantly request selinux-policy-extra itself.
 dnf install -y epel-release
 
-# micro is intentionally sourced from EPEL after the EPEL release package is
-# installed.
-dnf install -y micro
+echo "Installing Home Server Base package set..."
+dnf install -y "${BASE_PACKAGES[@]}"
 
-# nm-hsp is produced by home-server-packages and consumed as a verified OCI
-# package artifact. The same ordinary x86_64 RPM is used on x86_64 and
-# x86_64_v2 Home Server Base images.
-NM_HSP_ROOT=/mnt/nm-hsp
-
-test -r "${NM_HSP_ROOT}/metadata/SHA256SUMS"
-test -r "${NM_HSP_ROOT}/metadata/rpm-sha256.txt"
-test -r "${NM_HSP_ROOT}/metadata/package.env"
-
-(
-    cd "${NM_HSP_ROOT}"
-    sha256sum -c metadata/SHA256SUMS
-    sha256sum -c metadata/rpm-sha256.txt
-)
-
-# shellcheck disable=SC1091
-source "${NM_HSP_ROOT}/metadata/package.env"
-[[ "${PACKAGE}" == "nm-hsp" ]]
-[[ ",${ARCHITECTURES}," == *",x86_64,"* ]]
-
+# nm-hsp is produced and validated by home-server-packages. The workflow
+# resolves the stable OCI artifact to an immutable digest before this build.
+# The same ordinary x86_64 RPM is intentionally consumed by both Base variants.
 mapfile -t NM_HSP_RPMS < <(
-    find "${NM_HSP_ROOT}/rpms" -maxdepth 1 -type f \
+    find /ctx/nm-hsp-rpms -maxdepth 1 -type f \
         -name 'nm-hsp-*.x86_64.rpm' -print | sort
 )
 
 if (( ${#NM_HSP_RPMS[@]} != 1 )); then
-    echo "ERROR: expected exactly one nm-hsp x86_64 RPM, found ${#NM_HSP_RPMS[@]}." >&2
+    echo "ERROR: expected exactly one verified nm-hsp x86_64 RPM, found ${#NM_HSP_RPMS[@]}." >&2
     printf '%s\n' "${NM_HSP_RPMS[@]}" >&2
     exit 1
 fi
