@@ -116,18 +116,16 @@ jobs:
           repos_ref="$(resolve_ref "${ALMA_REPOS_IMAGE}" "${UPSTREAM_ARCH}" "${UPSTREAM_VARIANT}")"
           imagectl_ref="$(resolve_ref "${BOOTC_IMAGECTL_IMAGE}" amd64)"
           builder_ref="$(resolve_ref "${ALMA_BUILDER_IMAGE}" "${UPSTREAM_ARCH}" "${UPSTREAM_VARIANT}")"
-          nm_hsp_ref="$(resolve_ref "${NM_HSP_IMAGE}" amd64)"
 
           echo "Build platform: ${{ matrix.platform }}"
           echo "Alma repository image: ${repos_ref}"
           echo "bootc imagectl image: ${imagectl_ref}"
           echo "Alma builder image: ${builder_ref}"
-          echo "nm-hsp package artifact: ${nm_hsp_ref}"
+          echo "nm-hsp package channel: ${NM_HSP_IMAGE}"
 
           echo "repos_ref=${repos_ref}" >> "${GITHUB_OUTPUT}"
           echo "imagectl_ref=${imagectl_ref}" >> "${GITHUB_OUTPUT}"
           echo "builder_ref=${builder_ref}" >> "${GITHUB_OUTPUT}"
-          echo "nm_hsp_ref=${nm_hsp_ref}" >> "${GITHUB_OUTPUT}"
 
       - name: Build image
         shell: bash
@@ -135,7 +133,6 @@ jobs:
           ALMA_REPOS_REF: ${{ steps.inputs.outputs.repos_ref }}
           BOOTC_IMAGECTL_REF: ${{ steps.inputs.outputs.imagectl_ref }}
           ALMA_BUILDER_REF: ${{ steps.inputs.outputs.builder_ref }}
-          NM_HSP_REF: ${{ steps.inputs.outputs.nm_hsp_ref }}
         run: |
           set -euo pipefail
           sudo podman build \
@@ -147,7 +144,7 @@ jobs:
             --build-arg "ALMA_REPOS_IMAGE=${ALMA_REPOS_REF}" \
             --build-arg "BOOTC_IMAGECTL_IMAGE=${BOOTC_IMAGECTL_REF}" \
             --build-arg "ALMA_BUILDER_IMAGE=${ALMA_BUILDER_REF}" \
-            --build-arg "NM_HSP_IMAGE=${NM_HSP_REF}" \
+            --build-arg "NM_HSP_IMAGE=${NM_HSP_IMAGE}" \
             --build-arg "IMAGE_CHANNEL=${IMAGE_CHANNEL}" \
             --build-arg "BASE_MANIFEST=${BASE_MANIFEST}" \
             --build-arg "BASE_PROFILE=${BASE_PROFILE}" \
@@ -319,7 +316,6 @@ jobs:
           REPOS_REF: ${{ steps.inputs.outputs.repos_ref }}
           IMAGECTL_REF: ${{ steps.inputs.outputs.imagectl_ref }}
           BUILDER_REF: ${{ steps.inputs.outputs.builder_ref }}
-          NM_HSP_REF: ${{ steps.inputs.outputs.nm_hsp_ref }}
           RECHUNK_LAYERS: ${{ steps.rechunk.outputs.layers }}
           PUBLISHED_DIGEST: ${{ steps.push.outputs.digest }}
         run: |
@@ -336,7 +332,7 @@ jobs:
             echo "- Alma repository source: ${REPOS_REF:-unknown}"
             echo "- bootc imagectl source: ${IMAGECTL_REF:-unknown}"
             echo "- Alma builder source: ${BUILDER_REF:-unknown}"
-            echo "- nm-hsp package artifact: ${NM_HSP_REF:-unknown}"
+            echo "- nm-hsp package channel: ${NM_HSP_IMAGE}"
             echo "- Rechunked layers: ${RECHUNK_LAYERS:-unknown} / OCI max ${OCI_LAYER_LIMIT}"
             if [[ -n "${PUBLISHED_DIGEST:-}" ]]; then
               echo "- Published tag: ${IMAGE_REPOSITORY}:${CURRENT_TAG:-unknown}"
