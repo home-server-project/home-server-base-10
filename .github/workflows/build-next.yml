@@ -25,6 +25,7 @@ env:
   ALMA_REPOS_IMAGE: quay.io/almalinuxorg/10-kitten-base:10-kitten
   BOOTC_IMAGECTL_IMAGE: quay.io/centos-bootc/centos-bootc:stream10
   ALMA_BUILDER_IMAGE: quay.io/almalinuxorg/10-kitten-base:10-kitten
+  NM_HSP_IMAGE: ghcr.io/home-server-project/nm-hsp:stable
 
 jobs:
   build:
@@ -102,11 +103,19 @@ jobs:
               inspect_args+=(--override-variant "${variant}")
             fi
 
-            digest="$(skopeo inspect \
+            if ! digest="$(skopeo inspect \
               "${inspect_args[@]}" \
               --format '{{.Digest}}' \
-              "docker://${image}")"
-            [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]
+              "docker://${image}")"; then
+              echo "ERROR: failed to resolve upstream image digest: ${image}" >&2
+              return 1
+            fi
+
+            if ! [[ "${digest}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "ERROR: invalid digest returned for ${image}: '${digest}'" >&2
+              return 1
+            fi
+
             printf '%s@%s' "${image%:*}" "${digest}"
           }
 
@@ -122,6 +131,7 @@ jobs:
           echo "Kitten repository image: ${repos_ref}"
           echo "bootc imagectl image: ${imagectl_ref}"
           echo "Kitten builder image: ${builder_ref}"
+          echo "nm-hsp package channel: ${NM_HSP_IMAGE}"
 
           echo "repos_ref=${repos_ref}" >> "${GITHUB_OUTPUT}"
           echo "imagectl_ref=${imagectl_ref}" >> "${GITHUB_OUTPUT}"
@@ -144,6 +154,7 @@ jobs:
             --build-arg "ALMA_REPOS_IMAGE=${ALMA_REPOS_REF}" \
             --build-arg "BOOTC_IMAGECTL_IMAGE=${BOOTC_IMAGECTL_REF}" \
             --build-arg "ALMA_BUILDER_IMAGE=${ALMA_BUILDER_REF}" \
+            --build-arg "NM_HSP_IMAGE=${NM_HSP_IMAGE}" \
             --build-arg "IMAGE_CHANNEL=${IMAGE_CHANNEL}" \
             --build-arg "BASE_MANIFEST=${BASE_MANIFEST}" \
             --build-arg "BASE_PROFILE=${BASE_PROFILE}" \
@@ -331,6 +342,7 @@ jobs:
             echo "- Kitten repository source: ${REPOS_REF:-unknown}"
             echo "- bootc imagectl source: ${IMAGECTL_REF:-unknown}"
             echo "- Kitten builder source: ${BUILDER_REF:-unknown}"
+            echo "- nm-hsp package channel: ${NM_HSP_IMAGE}"
             echo "- Rechunked layers: ${RECHUNK_LAYERS:-unknown} / OCI max ${OCI_LAYER_LIMIT}"
             if [[ -n "${PUBLISHED_DIGEST:-}" ]]; then
               echo "- Published tag: ${IMAGE_REPOSITORY}:${CURRENT_TAG:-unknown}"
