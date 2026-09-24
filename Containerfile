@@ -39,6 +39,7 @@ FROM --platform=linux/amd64 ${NM_HSP_IMAGE} AS nm-hsp-package
 # the final image only through the existing /ctx bind mount.
 FROM scratch AS ctx
 COPY build_files /build_files
+COPY system_files /system_files
 COPY --from=nm-hsp-package /rpms /nm-hsp-rpms
 
 FROM scratch
@@ -63,6 +64,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     bash /ctx/build_files/install-vpn.sh
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/tmp \
+    bash /ctx/build_files/configure-system.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
