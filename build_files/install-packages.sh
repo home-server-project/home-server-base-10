@@ -28,6 +28,7 @@ BASE_PACKAGES=(
     tcpdump
     toolbox
     traceroute
+    zram-generator
 )
 
 # AlmaLinux 10 enables CRB in the repository set used by our proven Rose,

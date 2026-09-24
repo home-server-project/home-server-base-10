@@ -27,6 +27,7 @@ CONTRACT_PACKAGES=(
     systemd-resolved
     tcpdump
     traceroute
+    zram-generator
     open-vm-tools
     hyperv-daemons
     toolbox
@@ -83,6 +84,14 @@ grep -Fqx 'dns=systemd-resolved' /etc/NetworkManager/conf.d/90-systemd-resolved.
 test -f /usr/lib/tmpfiles.d/home-server-base-resolved.conf
 grep -Fqx 'L+ /etc/resolv.conf - - - - /run/systemd/resolve/stub-resolv.conf' \
     /usr/lib/tmpfiles.d/home-server-base-resolved.conf
+
+# Base owns one shared dynamic zram-generator policy for all downstream images.
+test -f /etc/systemd/zram-generator.conf
+grep -Fqx '[zram0]' /etc/systemd/zram-generator.conf
+if grep -Eq '^[[:space:]]*zram-size[[:space:]]*=' /etc/systemd/zram-generator.conf; then
+    echo "ERROR: Base zram policy must use zram-generator dynamic sizing." >&2
+    exit 1
+fi
 
 # Base images carry the clients and enabled services, but no deployment
 # identity or enrollment state.
