@@ -73,6 +73,17 @@ test -f /etc/systemd/system/netbird.service
 test "$(systemctl is-enabled tailscaled.service)" = "enabled"
 test "$(systemctl is-enabled netbird.service)" = "enabled"
 
+# Base owns the complete generic systemd-resolved runtime contract.
+test "$(systemctl is-enabled systemd-resolved.service)" = "enabled"
+
+test -f /etc/NetworkManager/conf.d/90-systemd-resolved.conf
+grep -Fqx '[main]' /etc/NetworkManager/conf.d/90-systemd-resolved.conf
+grep -Fqx 'dns=systemd-resolved' /etc/NetworkManager/conf.d/90-systemd-resolved.conf
+
+test -f /usr/lib/tmpfiles.d/home-server-base-resolved.conf
+grep -Fqx 'L+ /etc/resolv.conf - - - - /run/systemd/resolve/stub-resolv.conf' \
+    /usr/lib/tmpfiles.d/home-server-base-resolved.conf
+
 # Base images carry the clients and enabled services, but no deployment
 # identity or enrollment state.
 test ! -e /var/lib/tailscale/tailscaled.state
