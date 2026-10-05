@@ -16,6 +16,7 @@ All images use the repository `ghcr.io/home-server-project/home-server-base-10`.
 | --- | --- | --- | --- | --- |
 | Stable | AlmaLinux 10 | Podman | x86-64-v3 | `stable` |
 | Stable | AlmaLinux 10 | Podman | x86-64-v2 | `stable-v2` |
+| Stable | AlmaLinux 10 | Docker | x86-64-v3 | `stable-docker` |
 | Testing | AlmaLinux 10 | Podman | x86-64-v3 | `testing` |
 | Testing | AlmaLinux 10 | Podman | x86-64-v2 | `testing-v2` |
 | Testing | AlmaLinux 10 | Docker | x86-64-v3 | `testing-docker` |
@@ -28,8 +29,6 @@ Stable is the production foundation. Testing validates changes before promotion.
 The `-v2` images use AlmaLinux's `x86_64_v2` package set for older hardware. CPU and runtime variants have explicit tags rather than one combined tag. Docker variants are v3-only; there are no Docker v2 tags.
 
 Docker variants include Docker Engine, CLI, containerd, Compose, and Buildx. Docker and containerd start automatically at boot. Toolbox is excluded. Podman remains installed because bootc requires it, with its system API service and socket disabled.
-
-`stable-docker` is reserved for a future promotion to Stable; the Stable workflow does not publish it yet.
 
 Existing Podman containers and Quadlets are not automatically converted when switching to a Docker variant. Move workloads explicitly and back up their persistent data before switching.
 
