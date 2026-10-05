@@ -26,9 +26,14 @@ BASE_PACKAGES=(
     rsync
     systemd-resolved
     tcpdump
-    toolbox
     traceroute
 )
+
+case "${CONTAINER_RUNTIME:-podman}" in
+    podman) BASE_PACKAGES+=(toolbox) ;;
+    docker) ;;
+    *) echo "ERROR: unsupported container runtime" >&2; exit 1 ;;
+esac
 
 # AlmaLinux 10 enables CRB in the repository set used by our proven Rose,
 # Pasiv Black Box, and JustVoxel builds. EPEL depends on the CRB SELinux split.

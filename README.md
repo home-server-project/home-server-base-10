@@ -8,17 +8,32 @@ Home Server Base 10 is the common EL10 bootc foundation for Home Server Project 
 
 It composes a deliberately small Minimal Plus root filesystem and keeps appliance-specific features in downstream images.
 
-## Channels
+## Image matrix
 
-| Channel | Upstream | Purpose | Moving tags |
-| --- | --- | --- | --- |
-| Stable | AlmaLinux 10 | Production foundation | `stable`, `stable-v2` |
-| Testing | AlmaLinux 10 | Development and validation before promotion | `testing`, `testing-v2` |
-| Next | AlmaLinux Kitten 10 | Forward-looking compatibility canary | `next`, `next-v2` |
+All images use the repository `ghcr.io/home-server-project/home-server-base-10`. Append the tag below to select the channel, application container runtime, and CPU baseline.
 
-The default images follow the normal AlmaLinux 10 x86-64 baseline. The `-v2` images use the AlmaLinux `x86_64_v2` package set for hardware that requires the older x86-64-v2 CPU baseline.
+| Channel | Upstream base | Application runtime | Minimum CPU baseline | Image tag |
+| --- | --- | --- | --- | --- |
+| Stable | AlmaLinux 10 | Podman | x86-64-v3 | `stable` |
+| Stable | AlmaLinux 10 | Podman | x86-64-v2 | `stable-v2` |
+| Testing | AlmaLinux 10 | Podman | x86-64-v3 | `testing` |
+| Testing | AlmaLinux 10 | Podman | x86-64-v2 | `testing-v2` |
+| Testing | AlmaLinux 10 | Docker | x86-64-v3 | `testing-docker` |
+| Next | AlmaLinux Kitten 10 | Podman | x86-64-v3 | `next` |
+| Next | AlmaLinux Kitten 10 | Podman | x86-64-v2 | `next-v2` |
+| Next | AlmaLinux Kitten 10 | Docker | x86-64-v3 | `next-docker` |
 
-The architecture variants are intentionally published as explicit tags rather than hidden behind one combined tag. Downstream projects can therefore select the required CPU baseline deliberately.
+Stable is the production foundation. Testing validates changes before promotion. Next is the forward-looking Kitten compatibility channel. Each workflow publishes its configured tags only after a successful build and validation.
+
+The `-v2` images use AlmaLinux's `x86_64_v2` package set for older hardware. CPU and runtime variants have explicit tags rather than one combined tag. Docker variants are v3-only; there are no Docker v2 tags.
+
+Docker variants include Docker Engine, CLI, containerd, Compose, and Buildx. Docker and containerd start automatically at boot. Toolbox is excluded. Podman remains installed because bootc requires it, with its system API service and socket disabled.
+
+`stable-docker` is reserved for a future promotion to Stable; the Stable workflow does not publish it yet.
+
+Existing Podman containers and Quadlets are not automatically converted when switching to a Docker variant. Move workloads explicitly and back up their persistent data before switching.
+
+Each workflow also publishes immutable dated/SHA tags. Published images are signed with Cosign, and the workflow verifies the published digest after signing.
 
 ## Build model
 
@@ -29,30 +44,15 @@ The repository carries both rootfs manifests:
 - `almalinux-10-minimal-plus` for Stable and Testing.
 - `almalinux-10-kitten-minimal-plus` for Next.
 
-The workflow selects the channel, upstream source, rootfs manifest, and CPU baseline. Channel identity is build metadata rather than a separate branch-specific implementation.
+The workflow selects the channel, upstream source, rootfs manifest, application container runtime, and CPU baseline. Channel identity is build metadata rather than a separate branch-specific implementation.
 
 ## Promotion model
 
 `next` is used to discover upcoming AlmaLinux Kitten compatibility changes early. Kitten-only work is documented and is not automatically copied into the production base.
 
-Changes intended for production are validated on `testing`. After both Testing architecture jobs pass, the validated source is promoted to `main` through a normal pull request. The Stable workflow then publishes the production images.
+Changes intended for production are validated on `testing`. After all Testing runtime and CPU variant jobs pass, the validated source is promoted to `main` through a normal pull request. The Stable workflow then publishes the production images.
 
 This keeps promotion as source promotion instead of manually rebuilding the same change on `main`.
-
-## Images
-
-Moving tags:
-
-- `ghcr.io/home-server-project/home-server-base-10:stable`
-- `ghcr.io/home-server-project/home-server-base-10:stable-v2`
-- `ghcr.io/home-server-project/home-server-base-10:testing`
-- `ghcr.io/home-server-project/home-server-base-10:testing-v2`
-- `ghcr.io/home-server-project/home-server-base-10:next`
-- `ghcr.io/home-server-project/home-server-base-10:next-v2`
-
-Each workflow also publishes immutable dated/SHA tags.
-
-Published images are signed with Cosign and the workflow verifies the published digest after signing.
 
 ## Shared VPN foundation
 

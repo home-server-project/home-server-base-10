@@ -47,6 +47,7 @@ jobs:
             microarch: v3
             current_tag: next
             immutable_prefix: next
+            runtime: podman
           - name: x86_64_v2
             platform: linux/amd64/v2
             upstream_arch: amd64
@@ -55,6 +56,16 @@ jobs:
             microarch: v2
             current_tag: next-v2
             immutable_prefix: next-v2
+            runtime: podman
+          - name: x86_64_docker
+            platform: linux/amd64
+            upstream_arch: amd64
+            upstream_variant: ''
+            rpm_arch: x86_64
+            microarch: v3
+            current_tag: next-docker
+            immutable_prefix: next-docker
+            runtime: docker
 
     steps:
       - name: Checkout next branch
@@ -160,7 +171,8 @@ jobs:
             --build-arg "BASE_PROFILE=${BASE_PROFILE}" \
             --label "org.opencontainers.image.revision=${NEXT_SHA}" \
             --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --label "io.home-server-project.base.arch=${{ matrix.name }}" \
+            --build-arg "CONTAINER_RUNTIME=${{ matrix.runtime }}" \
+            --label "io.home-server-project.base.arch=${{ matrix.rpm_arch }}" \
             --label "io.home-server-project.base.microarch=${{ matrix.microarch }}" \
             --tag home-server-base-10:unrechunked \
             --file Containerfile \
@@ -207,20 +219,24 @@ jobs:
         shell: bash
         env:
           EXPECTED_RPM_ARCH: ${{ matrix.rpm_arch }}
-          EXPECTED_IMAGE_ARCH: ${{ matrix.name }}
+          EXPECTED_IMAGE_ARCH: ${{ matrix.rpm_arch }}
           EXPECTED_MICROARCH: ${{ matrix.microarch }}
+          EXPECTED_RUNTIME: ${{ matrix.runtime }}
         run: |
           set -euo pipefail
           sudo podman run --rm \
             -e "EXPECTED_RPM_ARCH=${EXPECTED_RPM_ARCH}" \
             -e "EXPECTED_IMAGE_ARCH=${EXPECTED_IMAGE_ARCH}" \
             -e "EXPECTED_MICROARCH=${EXPECTED_MICROARCH}" \
+            -e "EXPECTED_RUNTIME=${EXPECTED_RUNTIME}" \
             --entrypoint /bin/bash \
             home-server-base-10:test \
             -c '
               set -euo pipefail
               bootc container lint --fatal-warnings
               /usr/libexec/home-server-base/health/identity
+              /usr/libexec/home-server-base/health/packages
+              test "$(cat /usr/share/home-server-base/container-runtime)" = "${EXPECTED_RUNTIME}"
               rpm -q almalinux-kitten-repos
               command -v bootc
               command -v dnf
@@ -244,6 +260,9 @@ jobs:
             --format '{{ index .Labels "io.home-server-project.base.arch" }}')"
           microarch_label="$(sudo podman image inspect home-server-base-10:test \
             --format '{{ index .Labels "io.home-server-project.base.microarch" }}')"
+          runtime_label="$(sudo podman image inspect home-server-base-10:test \
+            --format '{{ index .Labels "io.home-server-project.base.runtime" }}')"
+          [[ "${runtime_label}" == "${EXPECTED_RUNTIME}" ]]
           [[ "${arch_label}" == "${EXPECTED_IMAGE_ARCH}" ]]
           [[ "${microarch_label}" == "${EXPECTED_MICROARCH}" ]]
           echo "Validated image labels: arch=${arch_label}, microarch=${microarch_label}"
@@ -337,6 +356,7 @@ jobs:
             echo "- Product identity: Home Server Base 10 Next"
             echo "- Base profile: AlmaLinux Kitten 10 minimal-plus"
             echo "- Build platform: ${{ matrix.platform }}"
+            echo "- Application runtime: ${{ matrix.runtime }}"
             echo "- RPM architecture: ${{ matrix.rpm_arch }}"
             echo "- CPU microarchitecture baseline: ${{ matrix.microarch }}"
             echo "- Kitten repository source: ${REPOS_REF:-unknown}"
@@ -367,7 +387,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           packages: home-server-base-10
           delete-tags: 'next-*'
-          exclude-tags: 'next,next-v2,stable,stable-*,testing,testing-*'
+          exclude-tags: 'next,next-v2,next-docker,stable,stable-*,testing,testing-*'
           older-than: 45 days
           keep-n-tagged: 7
           validate: true
