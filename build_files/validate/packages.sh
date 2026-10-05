@@ -43,6 +43,7 @@ case "${runtime}" in
         CONTRACT_PACKAGES+=(bootc podman crun docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
         ! rpm -q toolbox >/dev/null 2>&1
         ! rpm -q podman-docker >/dev/null 2>&1
+        grep -Fqx 'g docker -' /usr/lib/sysusers.d/home-server-base-docker.conf
         docker --version
         dockerd --version
         containerd --version

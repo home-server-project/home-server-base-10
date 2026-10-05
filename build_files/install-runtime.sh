@@ -19,6 +19,10 @@ case "${runtime}" in
         dnf install -y --setopt=install_weak_deps=False \
             docker-ce docker-ce-cli containerd.io \
             docker-buildx-plugin docker-compose-plugin
+        # Docker's RPM creates the group imperatively. Declare it for bootc
+        # so a fresh deployment can also create it through systemd-sysusers.
+        install -d -m0755 /usr/lib/sysusers.d
+        printf 'g docker -\n' > /usr/lib/sysusers.d/home-server-base-docker.conf
         systemctl enable docker.service containerd.service
         # bootc can invoke Podman directly without an enabled API listener.
         for unit in podman.socket podman.service; do
