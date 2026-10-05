@@ -30,12 +30,35 @@ CONTRACT_PACKAGES=(
     zram-generator
     open-vm-tools
     hyperv-daemons
-    toolbox
     micro
     nm-hsp
     tailscale
     netbird
 )
+
+runtime="$(cat /usr/share/home-server-base/container-runtime)"
+case "${runtime}" in
+    podman) CONTRACT_PACKAGES+=(toolbox) ;;
+    docker)
+        CONTRACT_PACKAGES+=(bootc podman crun docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
+        ! rpm -q toolbox >/dev/null 2>&1
+        ! rpm -q podman-docker >/dev/null 2>&1
+        grep -Fqx 'g docker -' /usr/lib/sysusers.d/home-server-base-docker.conf
+        docker --version
+        dockerd --version
+        containerd --version
+        docker compose version
+        docker buildx version
+        [[ "$(systemctl is-enabled docker.service)" == enabled ]]
+        [[ "$(systemctl is-enabled containerd.service)" == enabled ]]
+        for unit in podman.socket podman.service; do
+            if [[ -f "/usr/lib/systemd/system/${unit}" ]]; then
+                [[ "$(systemctl is-enabled "${unit}" || true)" == disabled ]]
+            fi
+        done
+        ;;
+    *) echo "ERROR: invalid container runtime: ${runtime}" >&2; exit 1 ;;
+esac
 
 for package in "${CONTRACT_PACKAGES[@]}"; do
     if ! rpm -q "${package}" >/dev/null; then
@@ -98,4 +121,4 @@ fi
 test ! -e /var/lib/tailscale/tailscaled.state
 test ! -e /var/lib/netbird/config.json
 
-echo "Validated Home Server Base package contract: 27 base requirements plus Tailscale and NetBird."
+echo "Validated Home Server Base package contract (${runtime})."

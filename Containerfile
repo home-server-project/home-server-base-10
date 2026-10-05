@@ -5,6 +5,7 @@ ARG NM_HSP_IMAGE=ghcr.io/home-server-project/nm-hsp:stable
 ARG BASE_MANIFEST=almalinux-10-minimal-plus
 ARG BASE_PROFILE=almalinux-10-minimal-plus
 ARG IMAGE_CHANNEL=stable
+ARG CONTAINER_RUNTIME=podman
 
 FROM ${ALMA_REPOS_IMAGE} AS repos
 FROM ${BOOTC_IMAGECTL_IMAGE} AS imagectl
@@ -43,6 +44,7 @@ COPY system_files /system_files
 COPY --from=nm-hsp-package /rpms /nm-hsp-rpms
 
 FROM scratch
+ARG CONTAINER_RUNTIME
 ARG IMAGE_CHANNEL
 ARG BASE_PROFILE
 COPY --from=rootfs-builder /target-rootfs/ /
@@ -55,11 +57,12 @@ LABEL containers.bootc=1 \
       org.opencontainers.image.vendor="Home Server Project" \
       io.home-server-project.base.generation="10" \
       io.home-server-project.base.profile="${BASE_PROFILE}" \
-      io.home-server-project.base.channel="${IMAGE_CHANNEL}"
+      io.home-server-project.base.channel="${IMAGE_CHANNEL}" \
+      io.home-server-project.base.runtime="${CONTAINER_RUNTIME}"
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
-    bash /ctx/build_files/install-packages.sh
+    CONTAINER_RUNTIME="${CONTAINER_RUNTIME}" bash /ctx/build_files/install-packages.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
@@ -68,6 +71,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     bash /ctx/build_files/configure-system.sh
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/tmp \
+    CONTAINER_RUNTIME="${CONTAINER_RUNTIME}" bash /ctx/build_files/install-runtime.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
