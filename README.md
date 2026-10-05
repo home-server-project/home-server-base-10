@@ -50,6 +50,12 @@ Moving tags:
 - `ghcr.io/home-server-project/home-server-base-10:next`
 - `ghcr.io/home-server-project/home-server-base-10:next-v2`
 
+The Testing channel also publishes `ghcr.io/home-server-project/home-server-base-10:testing-docker` for x86-64-v3 hardware. It includes Docker Engine, CLI, containerd, Compose, and Buildx, with Docker and containerd enabled at boot. Toolbox is excluded. Podman remains installed because bootc requires it; its system API service and socket are disabled. No `testing-docker-v2` variant is built.
+
+The planned promotion tags are `stable-docker` for AlmaLinux 10 and `next-docker` for AlmaLinux Kitten 10. These are not published by this Testing-only change.
+
+Existing Podman containers and Quadlets are not automatically converted when switching to the Docker variant. Move workloads explicitly and back up their persistent data before switching.
+
 Each workflow also publishes immutable dated/SHA tags.
 
 Published images are signed with Cosign and the workflow verifies the published digest after signing.
