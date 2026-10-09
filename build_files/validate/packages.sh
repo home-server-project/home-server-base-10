@@ -97,6 +97,13 @@ test -f /etc/systemd/system/netbird.service
 test "$(systemctl is-enabled tailscaled.service)" = "enabled"
 test "$(systemctl is-enabled netbird.service)" = "enabled"
 
+# NetBird's generated service directs stdout/stderr into /var/log/netbird.
+# systemd must create the directory on a fresh bootc deployment.
+netbird_logs_dropin=/usr/lib/systemd/system/netbird.service.d/10-home-server-base-logs.conf
+test -f "${netbird_logs_dropin}"
+grep -Fqx '[Service]' "${netbird_logs_dropin}"
+grep -Fqx 'LogsDirectory=netbird' "${netbird_logs_dropin}"
+
 # Base owns the complete generic systemd-resolved runtime contract.
 test "$(systemctl is-enabled systemd-resolved.service)" = "enabled"
 
