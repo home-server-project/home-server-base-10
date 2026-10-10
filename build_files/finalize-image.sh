@@ -154,6 +154,7 @@ install -m0755 /ctx/build_files/validate/packages.sh \
 # Keep only the minimal bootc /var skeleton. Runtime state belongs to deployed
 # machines, not this immutable base image.
 dnf clean all
+rm -rf /var
 install -d -m0755 /var
 install -d -m1777 /var/tmp
 install -d -m0755 /var/log/netbird
