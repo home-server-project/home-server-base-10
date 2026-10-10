@@ -157,4 +157,5 @@ dnf clean all
 rm -rf /var
 install -d -m0755 /var
 install -d -m1777 /var/tmp
+install -d -m0755 /var/log/netbird
 test "$(stat -c '%a %U %G' /var/tmp)" = "1777 root root"
