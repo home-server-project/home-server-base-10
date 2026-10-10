@@ -84,7 +84,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 
 RUN /usr/libexec/home-server-base/health/packages \
     && /usr/libexec/home-server-base/health/identity \
-    && bootc container lint --fatal-warnings --no-truncate
+    && bootc container lint --fatal-warnings
 
 STOPSIGNAL SIGRTMIN+3
 CMD ["/sbin/init"]
