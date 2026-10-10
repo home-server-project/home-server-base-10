@@ -104,6 +104,11 @@ test -f "${netbird_logs_dropin}"
 grep -Fqx '[Service]' "${netbird_logs_dropin}"
 grep -Fqx 'LogsDirectory=netbird' "${netbird_logs_dropin}"
 
+# Boot-time tmpfiles creation precedes NetBird stdout/stderr setup.
+netbird_tmpfiles=/usr/lib/tmpfiles.d/home-server-base-netbird.conf
+test -f "${netbird_tmpfiles}"
+grep -Fqx 'd /var/log/netbird 0755 root root -' "${netbird_tmpfiles}"
+
 # Base owns the complete generic systemd-resolved runtime contract.
 test "$(systemctl is-enabled systemd-resolved.service)" = "enabled"
 
