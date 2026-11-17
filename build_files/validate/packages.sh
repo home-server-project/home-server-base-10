@@ -27,6 +27,7 @@ CONTRACT_PACKAGES=(
     systemd-resolved
     tcpdump
     traceroute
+    zstd
     zram-generator
     open-vm-tools
     hyperv-daemons
