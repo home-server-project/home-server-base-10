@@ -18,6 +18,8 @@ include:
 
 packages:
   - almalinux-repos
+  # AlmaLinux 10.3 bootc lint requires zstd as an explicit runtime dependency.
+  - zstd
 
 postprocess:
   - |
